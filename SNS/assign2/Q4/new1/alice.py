@@ -1,4 +1,11 @@
+import socket
+import ast
+import random
+
+
 # Hexadecimal to binary conversion
+
+
 def hex2bin(s):
     mp = {'0': "0000",
           '1': "0001",
@@ -52,6 +59,7 @@ def bin2hex(s):
 
     return hex
 
+
 # Binary to decimal conversion
 
 
@@ -66,6 +74,7 @@ def bin2dec(binary):
         i += 1
     return decimal
 
+
 # Decimal to binary conversion
 
 
@@ -79,7 +88,20 @@ def dec2bin(num):
             res = '0' + res
     return res
 
-# Permute function to rearrange the bits
+
+def stringToBinary(input_str):
+    return ''.join(format(ord(i), '08b') for i in input_str)
+
+
+def binaryToString(b):
+    s = ""
+    for i in range(int(len(b)/8)):
+        n = int(b[8*i])
+        for j in range(1, 8):
+            n = n * 2 + int(b[8*i+j])
+        s = s + chr(n)
+
+    return s
 
 
 def permute(k, arr, n):
@@ -101,17 +123,14 @@ def shift_left(k, nth_shifts):
         s = ""
     return k
 
-# calculating xow of two strings of binary number a and b
+# calculating xor of two strings of binary number a and b
 
 
 def xor(a, b):
-    ans = ""
+    result = ""
     for i in range(len(a)):
-        if a[i] == b[i]:
-            ans = ans + "0"
-        else:
-            ans = ans + "1"
-    return ans
+        result = result + str(int(a[i]) ^ int(b[i]))
+    return result
 
 
 # Table of Position of 64 bits at initial level: Initial Permutation Table
@@ -194,8 +213,7 @@ final_perm = [40, 8, 48, 16, 56, 24, 64, 32,
               33, 1, 41, 9, 49, 17, 57, 25]
 
 
-def encrypt(pt, rkb, rk):
-    pt = hex2bin(pt)
+def encrypt_util(pt, rkb):
 
     # Initial Permutation
     pt = permute(pt, initial_perm, 64)
@@ -240,74 +258,164 @@ def encrypt(pt, rkb, rk):
     cipher_text = permute(combine, final_perm, 64)
     return cipher_text
 
+# pt : binary , key : binary : 64 bits
 
-pt = "1234567891234567"
-key = "1221344356657887"
 
-# Key generation
-# --hex to binary
-key = hex2bin(key)
-print(type(key))
-# --parity bit drop table
-keyp = [57, 49, 41, 33, 25, 17, 9,
-        1, 58, 50, 42, 34, 26, 18,
-        10, 2, 59, 51, 43, 35, 27,
-        19, 11, 3, 60, 52, 44, 36,
-        63, 55, 47, 39, 31, 23, 15,
-        7, 62, 54, 46, 38, 30, 22,
-        14, 6, 61, 53, 45, 37, 29,
-        21, 13, 5, 28, 20, 12, 4]
+def encrypt_64(pt, key):
+    # --parity bit drop table
+    keyp = [57, 49, 41, 33, 25, 17, 9,
+            1, 58, 50, 42, 34, 26, 18,
+            10, 2, 59, 51, 43, 35, 27,
+            19, 11, 3, 60, 52, 44, 36,
+            63, 55, 47, 39, 31, 23, 15,
+            7, 62, 54, 46, 38, 30, 22,
+            14, 6, 61, 53, 45, 37, 29,
+            21, 13, 5, 28, 20, 12, 4]
 
-# getting 56 bit key from 64 bit using the parity bits
-key = permute(key, keyp, 56)
-print(type(key))
+    # getting 56 bit key from 64 bit using the parity bits
+    key = permute(key, keyp, 56)
 
-# Number of bit shifts
-shift_table = [1, 1, 2, 2,
-               2, 2, 2, 2,
-               1, 2, 2, 2,
-               2, 2, 2, 1]
+    # Number of bit shifts
+    shift_table = [1, 1, 2, 2,
+                   2, 2, 2, 2,
+                   1, 2, 2, 2,
+                   2, 2, 2, 1]
 
-# Key- Compression Table : Compression of key from 56 bits to 48 bits
-key_comp = [14, 17, 11, 24, 1, 5,
-            3, 28, 15, 6, 21, 10,
-            23, 19, 12, 4, 26, 8,
-            16, 7, 27, 20, 13, 2,
-            41, 52, 31, 37, 47, 55,
-            30, 40, 51, 45, 33, 48,
-            44, 49, 39, 56, 34, 53,
-            46, 42, 50, 36, 29, 32]
+    # Key- Compression Table : Compression of key from 56 bits to 48 bits
+    key_comp = [14, 17, 11, 24, 1, 5,
+                3, 28, 15, 6, 21, 10,
+                23, 19, 12, 4, 26, 8,
+                16, 7, 27, 20, 13, 2,
+                41, 52, 31, 37, 47, 55,
+                30, 40, 51, 45, 33, 48,
+                44, 49, 39, 56, 34, 53,
+                46, 42, 50, 36, 29, 32]
 
-# Splitting
-left = key[0:28]
-right = key[28:56]
+    # Splitting
+    left = key[0:28]
+    right = key[28:56]
 
-# rkb for RoundKeys in binary
-# rk for RoundKeys in hexadecimal
-rkb = []
-rk = []
-for i in range(0, 16):
-    # Shifting the bits by nth shifts by checking from shift table
-    left = shift_left(left, shift_table[i])
-    right = shift_left(right, shift_table[i])
+    # rkb for RoundKeys in binary
+    rkb = []
+    for i in range(0, 16):
+        # Shifting the bits by nth shifts by checking from shift table
+        left = shift_left(left, shift_table[i])
+        right = shift_left(right, shift_table[i])
 
-    # Combination of left and right string
-    combine_str = left + right
+        # Combination of left and right string
+        combine_str = left + right
 
-    # Compression of key from 56 to 48 bits
-    round_key = permute(combine_str, key_comp, 48)
+        # Compression of key from 56 to 48 bits
+        round_key = permute(combine_str, key_comp, 48)
 
-    rkb.append(round_key)
-    rk.append(bin2hex(round_key))
+        rkb.append(round_key)
 
-print("Encryption")
-cipher_text = bin2hex(encrypt(pt, rkb, rk))
-print("Cipher Text : ", cipher_text)
+    return encrypt_util(pt, rkb)
 
-print("Decryption")
-rkb_rev = rkb[::-1]
-rk_rev = rk[::-1]
-text = bin2hex(encrypt(cipher_text, rkb_rev, rk_rev))
-print("Plain Text : ", text)
 
-# This code is contributed by Aditya Jain
+def ShiftLeft_r(s, r):
+    ret = s[r:64]
+    return ret
+
+
+def encrypt(pt, key, r, iv):
+    ct = ""
+    s = iv
+
+    r = r * 8
+    ptl = []
+    start = 0
+    end = r
+    for i in range(int(len(pt)/r)):
+        ptl.append(pt[start:end])
+        start += r
+        end += r
+
+    ctl = []
+    for i in range(len(ptl)):
+        t = encrypt_64(s, key)
+        ct = xor(t[0:r], ptl[i])
+        s = ShiftLeft_r(s, r) + t[0:r]
+        ctl.append(ct)
+
+    ct = ""
+    for i in range(len(ctl)):
+        ct += ctl[i]
+
+    return ct
+
+
+def convert_pt(pt):
+    r = 8
+    # padding
+    if len(pt) % r != 0:
+        for i in range(r - (len(pt) % r)):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
+
+
+def select_r():
+    nonce = random.randint(1, 1111)
+    return nonce
+
+
+def send_chat_request(s):
+    r = select_r()
+    rA = select_r()
+    msg1 = {
+        "peer1": myID,
+        "peer2": "bob",
+        "r": r,
+        "rA": rA
+    }
+
+    ct = encrypt(convert_pt(str(msg1)), key, 8, iv)
+
+    msg2 = {
+        "peer1": myID,
+        "peer2": "bob",
+        "r": r,
+        "ct": ct
+    }
+
+    s.send(str(msg2).encode())
+
+    return
+
+
+key = "alice777"
+iv = "amitsinh"
+myID = "alice"
+key = stringToBinary(key)
+iv = stringToBinary(iv)
+
+
+def get_sk(s):
+    ct = s.recv(2048).decode()
+    pt = encrypt(ct, key, 8, iv)
+    pt = binaryToString(pt)
+    pt = ast.literal_eval(pt)
+    # print(pt)
+    return pt['sk']
+
+
+# next create a socket object
+s = socket.socket()
+print("online!")
+
+bob_port_no = 12345
+s.connect(('127.0.0.1', bob_port_no))
+
+msg = s.recv(1024).decode()
+print(msg)
+
+# print("alice : sending the req ")
+send_chat_request(s)
+sk = get_sk(s)
+s.close()
+
+
+print("*******************")
+print("secret key : "+bin2hex(sk))
+print("*******************")

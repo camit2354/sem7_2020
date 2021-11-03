@@ -1,7 +1,4 @@
 import random
-import socket
-import ast
-
 
 # Hexadecimal to binary conversion
 
@@ -95,7 +92,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(int(len(b)/8)):
+    for i in range(len(b)/8):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -261,7 +258,7 @@ def encrypt_util(pt, rkb):
 # pt : binary , key : binary : 64 bits
 
 
-def encrypt_64(pt, key):
+def encrypt(pt, key):
     # --parity bit drop table
     keyp = [57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
@@ -318,7 +315,7 @@ def ShiftLeft_r(s, r):
     return ret
 
 
-def encrypt(pt, key, r, iv):
+def encrypt1(pt, key, r, iv):
     ct = ""
     s = iv
 
@@ -326,14 +323,14 @@ def encrypt(pt, key, r, iv):
     ptl = []
     start = 0
     end = r
-    for i in range(int(len(pt)/r)):
+    for i in range(len(pt)/r):
         ptl.append(pt[start:end])
         start += r
         end += r
 
     ctl = []
     for i in range(len(ptl)):
-        t = encrypt_64(s, key)
+        t = encrypt(s, key)
         ct = xor(t[0:r], ptl[i])
         s = ShiftLeft_r(s, r) + t[0:r]
         ctl.append(ct)
@@ -345,47 +342,12 @@ def encrypt(pt, key, r, iv):
     return ct
 
 
-def generate_sk_for_chat():
-    ret = ""
+def gen_random_iv():
+    iv = ""
     for i in range(64):
         n = random.randint(0, 1)
-        ret += str(n)
-    return ret
-
-
-def send_sk(conn):
-    msg = conn.recv(1024).decode()
-    msg = ast.literal_eval(msg)
-
-    print(msg['peer1'])
-    print(msg['peer2'])
-    # print(msg['ct1'])
-    # print(msg['ct2'])
-
-    ac1 = encrypt(msg['ct1'], keys[msg['peer1']], 8, iv)
-    ac2 = encrypt(msg['ct2'], keys[msg['peer2']], 8, iv)
-
-    ac1 = binaryToString(ac1)
-    ac2 = binaryToString(ac2)
-
-    ac1 = ast.literal_eval(ac1)
-    ac2 = ast.literal_eval(ac2)
-
-    print(ac1)
-    print("-------------")
-    print(ac2)
-
-    sk = generate_sk_for_chat()
-
-    msg1 = {'rA': ac1['rA'], 'sk': sk}
-    msg2 = {'rB': ac2['rB'], 'sk': sk}
-
-    ct1 = encrypt(convert_pt(str(msg1)), keys[msg['peer1']], 8, iv)
-    ct2 = encrypt(convert_pt(str(msg2)), keys[msg['peer2']], 8, iv)
-
-    res = str({'ct1': ct1, 'ct2': ct2})
-    conn.send(res.encode())
-    return
+        iv += str(n)
+    return iv
 
 
 def convert_pt(pt):
@@ -398,31 +360,23 @@ def convert_pt(pt):
     return pt
 
 
-keys = {
-    "alice": stringToBinary("alice777"),
-    "bob": stringToBinary("bob12345")
-}
+pt = input("Enter plain text : ")
+pt = convert_pt(pt)
 
-iv = "amitsinh"
-iv = stringToBinary(iv)
+key = "amitsinh"
+key = stringToBinary(key)
 
-# next create a socket object
-s = socket.socket()
+# Encryption
+print("Encryption !")
+iv = gen_random_iv()
+ct = encrypt1(pt, key, 8, iv)
+print("cipher text : "+bin2hex(ct))
+print("********************************")
 
-my_port_no = 12346
-
-s.bind(('', my_port_no))
-
-# put the socket into listening mode
-s.listen(1)
-print("online!")
-
-# Establish connection with client.
-conn, addr = s.accept()
-print('Got connection from', addr)
-
-conn.send("kdc : send chat acceptance ".encode())
-send_sk(conn)
-# Close the connection with the client
-conn.close()
-s.close()
+# Decryption
+print("Decryption !")
+iv = gen_random_iv()
+pt1 = encrypt1(ct, key, 8, iv)
+print("pt : "+bin2hex(pt))
+print("pt : "+binaryToString(pt))
+print("***************************")

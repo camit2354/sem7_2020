@@ -1,4 +1,5 @@
 import socket
+import random
 
 # public key
 pk = {'v': 511594531302,
@@ -6,30 +7,68 @@ pk = {'v': 511594531302,
       'n': 6060711605323}
 
 
+def select_random_c(e):
+    c = random.randint(1, e)
+    print("randomly selected c : "+str(c))
+    return c
+
+
+def get_witness(conn):
+    x = conn.recv(1024).decode()
+    print("Witness got : "+x)
+    x = int(x)
+    return x
+
+
+def get_y(conn):
+    y = conn.recv(1024).decode()
+    print("y got : "+y)
+    y = int(y)
+    return y
+
+
+def is_valid_y(y, x, c):
+    e = pk['e']
+    v = pk['v']
+    n = pk['n']
+    y2 = (pow(y, e)*pow(v, c)) % n
+    print("y2 : "+str(y2)+" x : "+str(x))
+    if y2 == x:
+        print("valid y !")
+        return True
+    else:
+        print("Invalid y !")
+        return False
+
+
+def send_c(conn, c):
+    conn.send(str(c).encode())
+    return
+
+
+def send_round_status(conn, status):
+    if status:
+        conn.send('1'.encode())
+    else:
+        conn.send('0'.encode())
+
+
 def authenticate_user_req(conn):
-    status = True
-    msg = "you need authentication ! "
-    for i in range(2):
-        msg += "send witness"
-        conn.send(msg.encode())
-        x = conn.recv(1024).decode()
-        print("Input x : "+x)
-        c = input("Enter challenge : ")
-        conn.send(("c : "+c).encode())
-        y = conn.recv(1024).decode()
-        print("input y from alice  : "+y)
-
-        c = int(c)
-        x = int(x)
-        y = int(y)
-        if (pow(y, pk["e"])*pow(pk["v"], c)) % pk["n"] != x:
-            conn.send("Sorry, ur authentication step failed!")
-            status = False
-            break
-        else:
-            msg = "last authentication  round is succesful"
-
-    return status
+    e = pk['e']
+    for i in range(e):
+        print("*****************************************")
+        print("**********  round "+str(i)+"  ************")
+        x = get_witness(conn)
+        c = select_random_c(e)
+        send_c(conn, c)
+        y = get_y(conn)
+        status = is_valid_y(y, x, c)
+        send_round_status(conn, status)
+        if status == False:
+            return status
+    print("#########################")
+    print("#########################")
+    return True
 
 
 # next create a socket object
@@ -46,14 +85,13 @@ print("online!")
 # Establish connection with client.
 conn, addr = s.accept()
 print('Got connection from', addr)
+conn.send("Auth required !".encode())
 
 status = authenticate_user_req(conn)
 if status:
-    conn.send(" Authentication succesful !".encode())
-    print("bob : Authentication succesful !")
+    print("Auth success !")
 else:
-    print("Authentication unsuccesful")
-    conn.send(" Authentication unsuccesful !".encode())
+    print("Auth failed")
 
 # Close the connection with the client
 conn.close()

@@ -1,4 +1,16 @@
-# Binary to decimal conversion
+
+hashSize = 64  # 64 bit output of hash function
+
+# calculating xor of two strings of binary number a and b
+
+
+def xor(a, b):
+    result = ""
+    for i in range(len(a)):
+        result = result + str(int(a[i]) ^ int(b[i]))
+    return result
+
+
 def stringToBinary(input_str):
     return ''.join(format(ord(i), '08b') for i in input_str)
 
@@ -13,48 +25,62 @@ def binaryToString(b):
 
     return s
 
+# Binary to decimal conversion
+
+
+# def bin2dec(binary):
+
+#     binary1 = binary
+#     decimal, i, n = 0, 0, 0
+#     while(binary != 0):
+#         dec = binary % 10
+#         decimal = decimal + dec * pow(2, i)
+#         binary = binary//10
+#         i += 1
+#     return decimal
 
 def bin2dec(binary):
-
     ret = 0
     for i in range(len(binary)):
         ret = ret*2 + int(binary[i])
     return ret
 
 
-def dec2bin(decimal):
-    ret = ""
-    i = 0
-    done = False
-    while not done:
-        if decimal != 0 or (i % 8 != 0):
-            ret += decimal % 2
-            decimal /= 2
-            i += 1
-        else:
-            done = True
-    return ret
+# Decimal to binary conversion
+
+
+def dec2bin(num):
+    res = bin(num).replace("0b", "")
+    if(len(res) % 4 != 0):
+        div = len(res) / 4
+        div = int(div)
+        counter = (4 * (div + 1)) - len(res)
+        for i in range(0, counter):
+            res = '0' + res
+    return res
+
+
+def padding(x, sz):
+    for i in range(len(x), sz):
+        x += '0'
+    return x
+
+# input : any size output : 64 bit
 
 
 def hash(x):
-    ret = ""
+    rollno = 63
+    rollno = padding(dec2bin(rollno), hashSize)
+    ret = rollno
+
+    temp = int(len(x) / hashSize)+1
+    x = padding(x, hashSize*temp)
+
     start = 0
-    end = 8
-    sz = 10
-    if len(x)/8 > sz:
-        for i in range(sz):
-            n = bin2dec(x[start:end])
-            start += 8
-            end += 8
-            ret += str(n % 2)
-    else:
-        for i in range(len(x)/8):
-            n = bin2dec(x[start:end])
-            start += 8
-            end += 8
-            ret += str(n % 2)
-        for i in range(len(x)/8, sz):
-            ret += '0'
+    end = hashSize
+    for i in range(int(len(x)/hashSize)):
+        ret = xor(ret, x[start:end])
+
     return ret
 
 
@@ -84,9 +110,9 @@ def sign(msg, d, r, pk):
 p = 2267
 q = 103
 e1 = 354
-d = 30
 e2 = 1206
 r = 11
+d = 30
 
 pk = {
     "e1": e1,
@@ -94,10 +120,18 @@ pk = {
     "p": p,
     "q": q
 
-
 }
 
-msg = 99887766554433
+
+msg = input("Enter message : ")
+msg = stringToBinary(msg)
+
+digest = hash(msg)
+print("digest : "+digest)
+
+msg = bin2dec(msg)
+print("msg : "+str(msg))
+
 sign_ = sign(msg, d, r, pk)
 print(sign_)
 

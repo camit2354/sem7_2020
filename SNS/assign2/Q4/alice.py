@@ -375,8 +375,7 @@ def send_chat_request(s):
     }
 
     s.send(str(msg2).encode())
-    # response = s.recv(1024).decode()
-    # print(response)
+
     return
 
 
@@ -385,6 +384,16 @@ iv = "amitsinh"
 myID = "alice"
 key = stringToBinary(key)
 iv = stringToBinary(iv)
+
+
+def get_sk(s):
+    ct = s.recv(2048).decode()
+    pt = encrypt(ct, key, 8, iv)
+    pt = binaryToString(pt)
+    pt = ast.literal_eval(pt)
+    # print(pt)
+    return pt['sk']
+
 
 # next create a socket object
 s = socket.socket()
@@ -396,7 +405,12 @@ s.connect(('127.0.0.1', bob_port_no))
 msg = s.recv(1024).decode()
 print(msg)
 
-print("alice : sending the req ")
+# print("alice : sending the req ")
 send_chat_request(s)
-
+sk = get_sk(s)
 s.close()
+
+
+print("*******************")
+print("secret key : "+bin2hex(sk))
+print("*******************")

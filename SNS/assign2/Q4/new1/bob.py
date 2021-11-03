@@ -1,4 +1,8 @@
+import socket
+import ast
 import random
+
+
 
 # Hexadecimal to binary conversion
 
@@ -92,7 +96,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(len(b)/8):
+    for i in range(int(len(b)/8)):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -258,7 +262,7 @@ def encrypt_util(pt, rkb):
 # pt : binary , key : binary : 64 bits
 
 
-def encrypt(pt, key):
+def encrypt_64(pt, key):
     # --parity bit drop table
     keyp = [57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
@@ -315,22 +319,22 @@ def ShiftLeft_r(s, r):
     return ret
 
 
-def encrypt1(pt, key, r, iv):
+def encrypt(pt, key, r, iv):
     ct = ""
     s = iv
 
-    r *= 8
+    r = r * 8
     ptl = []
     start = 0
     end = r
-    for i in range(len(pt)/r):
+    for i in range(int(len(pt)/r)):
         ptl.append(pt[start:end])
         start += r
         end += r
 
     ctl = []
     for i in range(len(ptl)):
-        t = encrypt(s, key)
+        t = encrypt_64(s, key)
         ct = xor(t[0:r], ptl[i])
         s = ShiftLeft_r(s, r) + t[0:r]
         ctl.append(ct)
@@ -342,32 +346,113 @@ def encrypt1(pt, key, r, iv):
     return ct
 
 
-pt = input("Enter plain text : ")
-key = "amitsinh"
-iv = ""
-for i in range(8):
-    n = random.randint(0, 127)
-    iv += chr(n)
-r = 8
+def convert_pt(pt):
+    r = 8
+    # padding
+    p = len(pt) % r
+    if p != 0:
+        for i in range(r - p):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
 
-# padding
-if len(pt) % r != 0:
-    for i in range(r - (len(pt) % r)):
-        pt += " "
 
+def select_r():
+    nonce = random.randint(1, 1111)
+    return nonce
+
+
+key = "bob12345"
+iv = "amitsinh"
 key = stringToBinary(key)
-pt = stringToBinary(pt)
 iv = stringToBinary(iv)
+myID = "bob"
 
-# plain text
-print("pt : "+bin2hex(pt))
-# Encryption
-print("Encryption !")
-ct = encrypt1(pt, key, r, iv)
-print("cipher text : "+bin2hex(ct))
 
-# Decryption
-print("Decryption !")
-pt1 = encrypt1(ct, key, r, iv)
-print("pt : "+bin2hex(pt))
-print("pt : "+binaryToString(pt))
+def accept_chat_request(conn):
+    msg = conn.recv(1024).decode()
+    msg = ast.literal_eval(msg)
+    print("msg request : ")
+    print("     "+msg["peer1"])
+    print("     "+msg["peer2"])
+    # print(msg["ct"])
+    print("     "+str(msg["r"]))
+
+    rB = select_r()
+    msg1 = {"peer1": msg["peer1"],
+            "peer2": msg["peer2"],  "r": msg["r"], "rB": rB}
+    msg1 = str(msg1)
+    pt = convert_pt(str(msg1))
+    print(binaryToString(pt))
+    print(len(pt))
+    ct = encrypt(pt, key, 8, iv)
+    msg2 = {
+        "peer1": msg['peer1'],
+        "peer2": msg['peer2'],
+        "ct1": msg["ct"],
+        "ct2": ct
+    }
+    return str(msg2)
+
+
+def send_req_toKDC(msgForKdc):
+    s = socket.socket()
+    kdc_port_no = 12346
+    s.connect(('127.0.0.1', kdc_port_no))
+    msgFromKdc = s.recv(1024).decode()
+    # print("msg from kdc : "+msgFromKdc)
+
+    s.send(str(msgForKdc).encode())
+    msgFromKdc = s.recv(2048).decode()
+    s.close()
+    return msgFromKdc
+    # next create a socket object
+
+
+def send_accept_req_to_alice(conn, msgFromKdc):
+    conn.send(msgFromKdc["ct1"].encode())
+    return
+
+
+def send_sk(conn, ct):
+    conn.send(ct.encode())
+    return
+
+
+s = socket.socket()
+
+my_port_no = 12345
+
+s.bind(('', my_port_no))
+
+# put the socket into listening mode
+s.listen(2)
+print("online!")
+
+# Establish connection with client.
+conn, addr = s.accept()
+print('Got connection req from : ', addr)
+
+conn.send("bob : connection created send req ".encode())
+
+msgForKdc = accept_chat_request(conn)
+# print("sending msg to kdc : ")
+
+
+msgFromKdc = send_req_toKDC(msgForKdc)
+# print("msg from kdc : "+msgFromKdc)
+
+msgFromKdc = ast.literal_eval(msgFromKdc)
+
+ct = msgFromKdc['ct2']
+pt = ast.literal_eval(binaryToString(encrypt(ct, key, 8, iv)))
+# print("msg from kdc for me : "+str(pt))
+
+print("*******************")
+print("secret key : "+bin2hex(pt['sk']))
+print("*********************")
+
+send_sk(conn, msgFromKdc['ct1'])
+# Close the connection with the client
+conn.close()
+s.close()

@@ -366,20 +366,23 @@ myID = "bob"
 def accept_chat_request(conn):
     msg = conn.recv(1024).decode()
     msg = ast.literal_eval(msg)
-    print(msg["peer1"])
-    print(msg["peer2"])
-    print(msg["ct"])
-    print(msg["r"])
+    print("msg request : ")
+    print("     "+msg["peer1"])
+    print("     "+msg["peer2"])
+    # print(msg["ct"])
+    print("     "+str(msg["r"]))
 
     rB = int(input("Enter rB : "))
-    msg1 = {"peer2": msg["peer2"],  "r": msg["r"], "rB": rB}
+    msg1 = {"peer1": msg["peer1"],
+            "peer2": msg["peer2"],  "r": msg["r"], "rB": rB}
+    msg1 = str(msg1)
     pt = convert_pt(str(msg1))
     print(binaryToString(pt))
     print(len(pt))
     ct = encrypt(pt, key, 8, iv)
     msg2 = {
-        "peer1":msg['peer1'],
-        "peer2":msg['peer2'],
+        "peer1": msg['peer1'],
+        "peer2": msg['peer2'],
         "ct1": msg["ct"],
         "ct2": ct
     }
@@ -391,18 +394,22 @@ def send_req_toKDC(msgForKdc):
     kdc_port_no = 12346
     s.connect(('127.0.0.1', kdc_port_no))
     msgFromKdc = s.recv(1024).decode()
-    print("msg from kdc : "+msgFromKdc)
+    # print("msg from kdc : "+msgFromKdc)
 
     s.send(str(msgForKdc).encode())
-    msgFromKdc = s.recv(1024).decode()
-    print("msg from kdc : " + msgFromKdc)
-    return msgFromKdc
+    msgFromKdc = s.recv(2048).decode()
     s.close()
+    return msgFromKdc
     # next create a socket object
 
 
 def send_accept_req_to_alice(conn, msgFromKdc):
     conn.send(msgFromKdc["ct1"].encode())
+    return
+
+
+def send_sk(conn, ct):
+    conn.send(ct.encode())
     return
 
 
@@ -423,13 +430,23 @@ print('Got connection from', addr)
 conn.send("bob : connection created send req ".encode())
 
 msgForKdc = accept_chat_request(conn)
-print("sending msg to kdc : ")
+# print("sending msg to kdc : ")
 
-conn.close()
 
 msgFromKdc = send_req_toKDC(msgForKdc)
-print(msgFromKdc)
+# print("msg from kdc : "+msgFromKdc)
 
+msgFromKdc = ast.literal_eval(msgFromKdc)
+
+ct = msgFromKdc['ct2']
+pt = ast.literal_eval(binaryToString(encrypt(ct, key, 8, iv)))
+# print("msg from kdc for me : "+str(pt))
+
+print("*******************")
+print("secret key : "+bin2hex(pt['sk']))
+print("*********************")
+
+send_sk(conn, msgFromKdc['ct1'])
 # Close the connection with the client
-
+conn.close()
 s.close()

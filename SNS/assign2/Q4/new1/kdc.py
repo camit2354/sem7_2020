@@ -1,4 +1,11 @@
+import random
+import socket
+import ast
+
+
 # Hexadecimal to binary conversion
+
+
 def hex2bin(s):
     mp = {'0': "0000",
           '1': "0001",
@@ -52,6 +59,7 @@ def bin2hex(s):
 
     return hex
 
+
 # Binary to decimal conversion
 
 
@@ -65,6 +73,7 @@ def bin2dec(binary):
         binary = binary//10
         i += 1
     return decimal
+
 
 # Decimal to binary conversion
 
@@ -86,7 +95,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(len(b)/8):
+    for i in range(int(len(b)/8)):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -252,7 +261,7 @@ def encrypt_util(pt, rkb):
 # pt : binary , key : binary : 64 bits
 
 
-def encrypt(pt, key):
+def encrypt_64(pt, key):
     # --parity bit drop table
     keyp = [57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
@@ -303,73 +312,119 @@ def encrypt(pt, key):
 
     return encrypt_util(pt, rkb)
 
-# ct : binary , key : binary : 64 bits
+
+def ShiftLeft_r(s, r):
+    ret = s[r:64]
+    return ret
 
 
-def decrypt(ct, key):
-    # --parity bit drop table
-    keyp = [57, 49, 41, 33, 25, 17, 9,
-            1, 58, 50, 42, 34, 26, 18,
-            10, 2, 59, 51, 43, 35, 27,
-            19, 11, 3, 60, 52, 44, 36,
-            63, 55, 47, 39, 31, 23, 15,
-            7, 62, 54, 46, 38, 30, 22,
-            14, 6, 61, 53, 45, 37, 29,
-            21, 13, 5, 28, 20, 12, 4]
+def encrypt(pt, key, r, iv):
+    ct = ""
+    s = iv
 
-    # getting 56 bit key from 64 bit using the parity bits
-    key = permute(key, keyp, 56)
+    r *= 8
+    ptl = []
+    start = 0
+    end = r
+    for i in range(int(len(pt)/r)):
+        ptl.append(pt[start:end])
+        start += r
+        end += r
 
-    # Number of bit shifts
-    shift_table = [1, 1, 2, 2,
-                   2, 2, 2, 2,
-                   1, 2, 2, 2,
-                   2, 2, 2, 1]
+    ctl = []
+    for i in range(len(ptl)):
+        t = encrypt_64(s, key)
+        ct = xor(t[0:r], ptl[i])
+        s = ShiftLeft_r(s, r) + t[0:r]
+        ctl.append(ct)
 
-    # Key- Compression Table : Compression of key from 56 bits to 48 bits
-    key_comp = [14, 17, 11, 24, 1, 5,
-                3, 28, 15, 6, 21, 10,
-                23, 19, 12, 4, 26, 8,
-                16, 7, 27, 20, 13, 2,
-                41, 52, 31, 37, 47, 55,
-                30, 40, 51, 45, 33, 48,
-                44, 49, 39, 56, 34, 53,
-                46, 42, 50, 36, 29, 32]
+    ct = ""
+    for i in range(len(ctl)):
+        ct += ctl[i]
 
-    # Splitting
-    left = key[0:28]
-    right = key[28:56]
-
-    # rkb for RoundKeys in binary
-    rkb = []
-    for i in range(0, 16):
-        # Shifting the bits by nth shifts by checking from shift table
-        left = shift_left(left, shift_table[i])
-        right = shift_left(right, shift_table[i])
-
-        # Combination of left and right string
-        combine_str = left + right
-
-        # Compression of key from 56 to 48 bits
-        round_key = permute(combine_str, key_comp, 48)
-
-        rkb.append(round_key)
-    rkb_rev = rkb[::-1]
-    return encrypt_util(ct, rkb_rev)
+    return ct
 
 
-print("Encryption !")
-pt = input("Enter plain text: ")
-key = input("Enter secret key : ")
-print("plain text in hex :"+bin2hex(stringToBinary(pt)))
-# Key generation
-# string to binary
-key = stringToBinary(key)
-pt = stringToBinary(pt)
+def generate_sk_for_chat():
+    ret = ""
+    for i in range(64):
+        n = random.randint(0, 1)
+        ret += str(n)
+    return ret
 
-ct = encrypt(pt, key)
-print("cipher text : "+bin2hex(ct))
 
-print("Decryption !")
-pt = decrypt(ct, key)
-print("plain text hex:"+bin2hex(pt))
+def send_sk(conn):
+    msg = conn.recv(1024).decode()
+    msg = ast.literal_eval(msg)
+
+    print(msg['peer1'])
+    print(msg['peer2'])
+    # print(msg['ct1'])
+    # print(msg['ct2'])
+
+    ac1 = encrypt(msg['ct1'], keys[msg['peer1']], 8, iv)
+    ac2 = encrypt(msg['ct2'], keys[msg['peer2']], 8, iv)
+
+    ac1 = binaryToString(ac1)
+    ac2 = binaryToString(ac2)
+
+    ac1 = ast.literal_eval(ac1)
+    ac2 = ast.literal_eval(ac2)
+
+    sk = generate_sk_for_chat()
+    print("***********************************")
+    print("secret key generated : "+bin2hex(sk))
+    msg1 = {'rA': ac1['rA'], 'sk': sk}
+    msg2 = {'rB': ac2['rB'], 'sk': sk}
+
+    ct1 = encrypt(convert_pt(str(msg1)), keys[msg['peer1']], 8, iv)
+    ct2 = encrypt(convert_pt(str(msg2)), keys[msg['peer2']], 8, iv)
+
+    res = str({'ct1': ct1, 'ct2': ct2})
+    conn.send(res.encode())
+    return
+
+
+def convert_pt(pt):
+    r = 8
+    # padding
+    if len(pt) % r != 0:
+        for i in range(r - (len(pt) % r)):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
+
+
+def select_r():
+    nonce = random.randint(1, 1111)
+    return nonce
+
+
+keys = {
+    "alice": stringToBinary("alice777"),
+    "bob": stringToBinary("bob12345")
+}
+
+iv = "amitsinh"
+iv = stringToBinary(iv)
+
+# next create a socket object
+s = socket.socket()
+
+my_port_no = 12346
+
+s.bind(('', my_port_no))
+
+# put the socket into listening mode
+s.listen(1)
+print("online!")
+
+# Establish connection with client.
+conn, addr = s.accept()
+print('Got key generation request from : ', addr)
+
+conn.send("kdc : send chat acceptance ".encode())
+send_sk(conn)
+# Close the connection with the client
+conn.close()
+s.close()
