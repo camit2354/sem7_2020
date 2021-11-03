@@ -2,9 +2,6 @@ import socket
 import ast
 import random
 
-key = "bob12345"
-myID = "bob"
-
 
 # Hexadecimal to binary conversion
 
@@ -98,7 +95,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(len(b)/8):
+    for i in range(int(len(b)/8)):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -325,11 +322,11 @@ def encrypt(pt, key, r, iv):
     ct = ""
     s = iv
 
-    r *= 8
+    r = r * 8
     ptl = []
     start = 0
     end = r
-    for i in range(len(pt)/r):
+    for i in range(int(len(pt)/r)):
         ptl.append(pt[start:end])
         start += r
         end += r
@@ -348,7 +345,67 @@ def encrypt(pt, key, r, iv):
     return ct
 
 
-# next create a socket object
+def convert_pt(pt):
+    r = 8
+    # padding
+    p = len(pt) % r
+    if p != 0:
+        for i in range(r - p):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
+
+
+key = "bob12345"
+iv = "amitsinh"
+key = stringToBinary(key)
+iv = stringToBinary(iv)
+myID = "bob"
+
+
+def accept_chat_request(conn):
+    msg = conn.recv(1024).decode()
+    msg = ast.literal_eval(msg)
+    print(msg["peer1"])
+    print(msg["peer2"])
+    print(msg["ct"])
+    print(msg["r"])
+
+    rB = int(input("Enter rB : "))
+    msg1 = {"peer2": msg["peer2"],  "r": msg["r"], "rB": rB}
+    pt = convert_pt(str(msg1))
+    print(binaryToString(pt))
+    print(len(pt))
+    ct = encrypt(pt, key, 8, iv)
+    msg2 = {
+        "peer1":msg['peer1'],
+        "peer2":msg['peer2'],
+        "ct1": msg["ct"],
+        "ct2": ct
+    }
+    return str(msg2)
+
+
+def send_req_toKDC(msgForKdc):
+    s = socket.socket()
+    kdc_port_no = 12346
+    s.connect(('127.0.0.1', kdc_port_no))
+    msgFromKdc = s.recv(1024).decode()
+    print("msg from kdc : "+msgFromKdc)
+
+    s.send(str(msgForKdc).encode())
+    msgFromKdc = s.recv(1024).decode()
+    print("msg from kdc : " + msgFromKdc)
+    return msgFromKdc
+    s.close()
+    # next create a socket object
+
+
+def send_accept_req_to_alice(conn, msgFromKdc):
+    conn.send(msgFromKdc["ct1"].encode())
+    return
+
+
 s = socket.socket()
 
 my_port_no = 12345
@@ -356,16 +413,23 @@ my_port_no = 12345
 s.bind(('', my_port_no))
 
 # put the socket into listening mode
-s.listen(1)
+s.listen(2)
 print("online!")
 
 # Establish connection with client.
 conn, addr = s.accept()
 print('Got connection from', addr)
 
-conn.send("connection created : ".encode())
-msg = conn.recv(1024).decode()
-print(msg)
-# Close the connection with the client
+conn.send("bob : connection created send req ".encode())
+
+msgForKdc = accept_chat_request(conn)
+print("sending msg to kdc : ")
+
 conn.close()
+
+msgFromKdc = send_req_toKDC(msgForKdc)
+print(msgFromKdc)
+
+# Close the connection with the client
+
 s.close()

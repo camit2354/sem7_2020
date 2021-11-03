@@ -3,9 +3,6 @@ import ast
 import random
 
 
-key = "alice777"
-myID = "alice"
-
 # Hexadecimal to binary conversion
 
 
@@ -98,7 +95,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(len(b)/8):
+    for i in range(int(len(b)/8)):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -325,11 +322,11 @@ def encrypt(pt, key, r, iv):
     ct = ""
     s = iv
 
-    r *= 8
+    r = r * 8
     ptl = []
     start = 0
     end = r
-    for i in range(len(pt)/r):
+    for i in range(int(len(pt)/r)):
         ptl.append(pt[start:end])
         start += r
         end += r
@@ -348,16 +345,6 @@ def encrypt(pt, key, r, iv):
     return ct
 
 
-r = 111
-rA = 123
-
-iv = ""
-for i in range(8):
-    n = random.randint(0, 127)
-    iv += chr(n)
-r = 8
-
-
 def convert_pt(pt):
     r = 8
     # padding
@@ -368,6 +355,34 @@ def convert_pt(pt):
     return pt
 
 
+def send_chat_request(s):
+    r = int(input("Enter r : "))
+    rA = int(input("Enter rA : "))
+    msg1 = {
+        "peer1": myID,
+        "peer2": "bob",
+        "r": r,
+        "rA": rA
+    }
+
+    ct = encrypt(convert_pt(str(msg1)), key, 8, iv)
+
+    msg2 = {
+        "peer1": myID,
+        "peer2": "bob",
+        "r": r,
+        "ct": ct
+    }
+
+    s.send(str(msg2).encode())
+    # response = s.recv(1024).decode()
+    # print(response)
+    return
+
+
+key = "alice777"
+iv = "amitsinh"
+myID = "alice"
 key = stringToBinary(key)
 iv = stringToBinary(iv)
 
@@ -381,21 +396,7 @@ s.connect(('127.0.0.1', bob_port_no))
 msg = s.recv(1024).decode()
 print(msg)
 
-msg1 = {
-    "peer1": myID,
-    "peer2": "bob",
-    "r": r,
-    "rA": rA
-}
+print("alice : sending the req ")
+send_chat_request(s)
 
-ct = encrypt(convert_pt(str(msg1)), key, 8, iv)
-msg2 = {
-    "peer1": myID,
-    "peer2": "bob",
-    "ct": ct
-}
-
-s.send(str(msg2).encode())
 s.close()
-
-# Breaking once connection closed

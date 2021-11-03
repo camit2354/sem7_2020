@@ -1,10 +1,6 @@
+import random
 import socket
 import ast
-
-keys = {
-    "alice": "alice777",
-    "bob": "bob12345"
-}
 
 
 # Hexadecimal to binary conversion
@@ -99,7 +95,7 @@ def stringToBinary(input_str):
 
 def binaryToString(b):
     s = ""
-    for i in range(len(b)/8):
+    for i in range(int(len(b)/8)):
         n = int(b[8*i])
         for j in range(1, 8):
             n = n * 2 + int(b[8*i+j])
@@ -330,7 +326,7 @@ def encrypt(pt, key, r, iv):
     ptl = []
     start = 0
     end = r
-    for i in range(len(pt)/r):
+    for i in range(int(len(pt)/r)):
         ptl.append(pt[start:end])
         start += r
         end += r
@@ -349,6 +345,67 @@ def encrypt(pt, key, r, iv):
     return ct
 
 
+def generate_sk_for_chat():
+    ret = ""
+    for i in range(64):
+        n = random.randint(0, 1)
+        ret += str(n)
+    return
+
+
+def send_sk(conn):
+    msg = conn.recv(1024).decode()
+    msg = ast.literal_eval(msg)
+
+    print(msg['peer1'])
+    print(msg['peer2'])
+    # print(msg['ct1'])
+    # print(msg['ct2'])
+
+    ac1 = encrypt(msg['ct1'], keys[msg['peer1']], 8, iv)
+    ac2 = encrypt(msg['ct2'], keys[msg['peer2']], 8, iv)
+
+    ac1 = binaryToString(ac1)
+    ac2 = binaryToString(ac2)
+
+    ac1 = ast.literal_eval(ac1)
+    ac2 = ast.literal_eval(ac2)
+
+    print(ac1)
+    print("-------------")
+    print(ac2)
+
+    sk = generate_sk_for_chat()
+
+    msg1 = {'rA': ac1['rA'], 'sk': sk}
+    msg2 = {'rB': ac2['rB'], 'sk': sk}
+
+    ct1 = encrypt(convert_pt(str(msg1)), keys[msg['peer1']], 8, iv)
+    ct2 = encrypt(convert_pt(str(msg2)), keys[msg['peer2']], 8, iv)
+
+    res = {'ct1': ct1, 'ct2': ct2}
+    print(res)
+    return
+
+
+def convert_pt(pt):
+    r = 8
+    # padding
+    if len(pt) % r != 0:
+        for i in range(r - (len(pt) % r)):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
+
+
+keys = {
+    "alice": stringToBinary("alice777"),
+    "bob": stringToBinary("bob12345")
+}
+
+iv = "amitsinh"
+iv = stringToBinary(iv)
+
 # next create a socket object
 s = socket.socket()
 
@@ -364,7 +421,8 @@ print("online!")
 conn, addr = s.accept()
 print('Got connection from', addr)
 
-
+conn.send("kdc : send chat acceptance ".encode())
+send_sk(conn)
 # Close the connection with the client
 conn.close()
 s.close()
