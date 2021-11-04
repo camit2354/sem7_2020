@@ -56,7 +56,6 @@ def send_round_status(conn, status):
 def authenticate_user_req(conn):
     e = pk['e']
     for i in range(e):
-        print("*****************************************")
         print("**********  round "+str(i)+"  ************")
         x = get_witness(conn)
         c = select_random_c(e)
@@ -66,8 +65,7 @@ def authenticate_user_req(conn):
         send_round_status(conn, status)
         if status == False:
             return status
-    print("#########################")
-    print("#########################")
+
     return True
 
 
@@ -80,7 +78,7 @@ s.bind(('', my_port_no))
 
 # put the socket into listening mode
 s.listen(1)
-print("online!")
+print("#     bob, online!")
 
 # Establish connection with client.
 conn, addr = s.accept()
@@ -89,9 +87,9 @@ conn.send("Auth required !".encode())
 
 status = authenticate_user_req(conn)
 if status:
-    print("Auth success !")
+    print("***********    Auth success !      ****************")
 else:
-    print("Auth failed")
+    print("***********    Auth failed         ****************")
 
 # Close the connection with the client
 conn.close()

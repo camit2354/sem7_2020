@@ -46,7 +46,6 @@ def is_round_succesful(skt):
 
 def make_auth_request(skt):
     for i in range(pk['e']):
-        print("*****************************************")
         print("**********  round "+str(i)+"  ************")
         r = select_random_r()
         send_witness(skt, r)
@@ -56,14 +55,12 @@ def make_auth_request(skt):
         if status == False:
             return status
 
-    print("#########################")
-    print("#########################")
     return True
 
 
 # next create a socket object
 s = socket.socket()
-print("Alice , online! ")
+print("#     Alice , online! ")
 
 bob_port_no = 12345
 s.connect(('127.0.0.1', bob_port_no))
@@ -72,9 +69,9 @@ print(msg)
 
 status = make_auth_request(s)
 if status:
-    print("Authentication succesful ! ")
+    print("******  Authentication succesful ! *************")
 else:
-    print("Authentication unsuccesful! ")
+    print("*****   Authentication unsuccesful! *************")
 
 s.close()
 

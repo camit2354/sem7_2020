@@ -1,4 +1,5 @@
 import sys
+import random
 hashSize = 64  # 64 bit output of hash function
 
 # calculating xor of two strings of binary number a and b
@@ -84,17 +85,23 @@ def hash(x):
     return ret
 
 
-def sign(msg, d, r, pk):
+def get_random_r():
+    r = random.randint(1, 999)
+    print("random r : "+str(r))
+    return r
+
+
+def sign(msg, sk):
     p = pk["p"]
     e1 = pk["e1"]
     q = pk['q']
+
+    r = get_random_r()
+    d = sk['d']
     s1 = bin2dec(hash(stringToBinary(str(msg) + str(pow(e1, r) % p))))
     s2 = r + (d*s1) % q
     return {"s1": s1, "s2": s2}
 
-
-r = 11
-d = 30
 
 pk = {
     "e1": 354,
@@ -104,6 +111,9 @@ pk = {
 
 }
 
+sk = {
+    'd': 30
+}
 
 msg = sys.argv[1]
 print("Doc for sign : "+msg)
@@ -113,5 +123,5 @@ msg = stringToBinary(msg)
 msg = bin2dec(msg)
 print("msg : "+str(msg))
 
-sign_ = sign(msg, d, r, pk)
+sign_ = sign(msg, sk)
 print(sign_)
