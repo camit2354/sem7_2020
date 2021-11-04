@@ -416,7 +416,8 @@ bob_port_no = 12345
 s.connect(('127.0.0.1', bob_port_no))
 
 msg = s.recv(1024).decode()
-print(msg)
+print("bob : "+msg)
+
 
 # print("alice : sending the req ")
 send_chat_request(s)
@@ -424,6 +425,6 @@ sk = get_sk(s)
 s.close()
 
 
-print("*******************")
+print("\n*******************")
 print("secret key : "+bin2hex(sk))
-print("*******************")
+print("*******************\n")

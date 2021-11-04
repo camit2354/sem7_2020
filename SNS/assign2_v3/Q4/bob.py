@@ -371,48 +371,106 @@ def select_r():
 
 key = "bob12345"
 key = stringToBinary(key)
+
 iv = stringToBinary("amitsinh")
 myID = "bob"
 
 
-def accept_chat_request(conn):
-    msg = conn.recv(1024).decode()
-    msg = ast.literal_eval(msg)
+def print_msg_req(msg):
     print("msg request : ")
     print("     "+msg["peer1"])
     print("     "+msg["peer2"])
-    # print(msg["ct"])
     print("     "+str(msg["r"]))
+    return
 
-    rB = select_r()
-    msg1 = {"peer1": msg["peer1"],
-            "peer2": msg["peer2"],  "r": msg["r"], "rB": rB}
-    msg1 = str(msg1)
-    pt = convert_pt(str(msg1))
-    print(binaryToString(pt))
-    print(len(pt))
-    ct = encrypt(pt, key, 8, iv)
+
+def get_req_fields(conn):
+    msg = conn.recv(1024).decode()
+    msg = ast.literal_eval(msg)
+    return msg
+
+
+def generate_req_acceptance(req, rB):
+    msg = {"peer1": req["peer1"],
+           "peer2": req["peer2"],  "r": req["r"], "rB": rB}
+    msg = str(msg)
+    return msg
+
+
+def create_key_gen_req_to_kdc(req, ct):
     msg2 = {
-        "peer1": msg['peer1'],
-        "peer2": msg['peer2'],
-        "ct1": msg["ct"],
+        "peer1": req['peer1'],
+        "peer2": req['peer2'],
+        "ct1": req["ct"],
         "ct2": ct
     }
     return str(msg2)
 
 
-def send_req_toKDC(msgForKdc):
+def is_kdc_res_valid(kds_res, rB):
+    return kds_res['rB'] == rB
+
+
+def send_connection_failure(conn):
+    conn.send(''.encode())
+    conn.close()
+    return
+
+
+def accept_chat_request(conn):
+
+    req = get_req_fields(conn)
+
+    print_msg_req(req)
+
+    rB = select_r()
+
+    msgAcp = generate_req_acceptance(req, rB)
+
+    pt = convert_pt(msgAcp)
+
+    ct = encrypt(pt, key, 8, iv)
+
+    kdc_req = create_key_gen_req_to_kdc(req, ct)
+
+    kdc_res = get_kdc_response(kdc_req)
+    kdc_res = ast.literal_eval(kdc_res)
+
+    ct_kdc_res_for_me = kdc_res['ct2']
+    kdc_res_for_me = ast.literal_eval(
+        binaryToString(encrypt(ct_kdc_res_for_me, key, 8, iv)))
+
+    res_validity_status = is_kdc_res_valid(kdc_res_for_me, rB)
+
+    if res_validity_status != True:
+        send_connection_failure(conn)
+        return False
+
+    print("\n KDC : \n"+str(kdc_res_for_me))
+
+    print("*******************")
+    print("secret key : "+bin2hex(kdc_res_for_me['sk']))
+    print("*********************")
+
+    send_response(conn, kdc_res['ct1'])
+    # Close the connection with the client
+    conn.close()
+    return
+
+
+def get_kdc_response(kdc_req):
+
     s = socket.socket()
     kdc_port_no = 12346
     s.connect(('127.0.0.1', kdc_port_no))
-    msgFromKdc = s.recv(1024).decode()
-    # print("msg from kdc : "+msgFromKdc)
 
-    s.send(str(msgForKdc).encode())
-    msgFromKdc = s.recv(2048).decode()
+    kdc_res = s.recv(1024).decode()
+
+    s.send(str(kdc_req).encode())
+
+    kdc_res = s.recv(2048).decode()
     s.close()
-    return msgFromKdc
-    # next create a socket object
+    return kdc_res
 
 
 def send_accept_req_to_alice(conn, msgFromKdc):
@@ -420,7 +478,7 @@ def send_accept_req_to_alice(conn, msgFromKdc):
     return
 
 
-def send_sk(conn, ct):
+def send_response(conn, ct):
     conn.send(ct.encode())
     return
 
@@ -438,27 +496,10 @@ print("online!")
 # Establish connection with client.
 conn, addr = s.accept()
 print('Got connection req from : ', addr)
-
 conn.send("bob : connection created send req ".encode())
 
-msgForKdc = accept_chat_request(conn)
-# print("sending msg to kdc : ")
-
-
-msgFromKdc = send_req_toKDC(msgForKdc)
+accept_chat_request(conn)
 # print("msg from kdc : "+msgFromKdc)
 
-msgFromKdc = ast.literal_eval(msgFromKdc)
 
-ct = msgFromKdc['ct2']
-pt = ast.literal_eval(binaryToString(encrypt(ct, key, 8, iv)))
-# print("msg from kdc for me : "+str(pt))
-
-print("*******************")
-print("secret key : "+bin2hex(pt['sk']))
-print("*********************")
-
-send_sk(conn, msgFromKdc['ct1'])
-# Close the connection with the client
-conn.close()
 s.close()
