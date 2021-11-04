@@ -1,8 +1,11 @@
 import random
 import sys
+import socket
 
-key = "2DB3AB3F41936CBC"
-
+f = open("keygen_output.txt", "r")
+key = f.readline()
+print("key : "+key)
+f.close()
 
 # Hexadecimal to binary conversion
 
@@ -368,15 +371,34 @@ key = hex2bin(key)
 iv = "lovekush"
 iv = stringToBinary(iv)
 
-pt = sys.argv[1]
+
+# next create a socket object
+s = socket.socket()
+print("#     alice, online!")
+
+bob_port_no = 12345
+s.connect(('127.0.0.1', bob_port_no))
+
+msg = s.recv(2048).decode()
+print("bob : "+msg)
+
+f = open("input.txt", "r")
+pt = f.readline()
+print("\nplain text from input file : \n"+key)
+f.close()
+
 pt = convert_pt(pt)
 
 
 # Encryption
 print("Encryption !")
-print("plain text : "+binaryToString(pt))
-print("plain text : "+bin2hex(pt))
-print("iv : "+bin2hex(iv))
+print("\nplain text in hex format : \n"+bin2hex(pt))
+print("iv : \n"+bin2hex(iv))
 ct = encrypt1(pt, key, 8, iv)
-print("cipher text : "+bin2hex(ct))
+ct = bin2hex(ct)
+
+s.send(ct.encode())
+s.close()
+
+print("\ncipher text sent to bob : \n"+ct)
 print("********************************")

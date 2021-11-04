@@ -39,4 +39,7 @@ def gen_random_key_64():
 
 
 key = gen_random_key_64()
-print("\nkey : "+bin2hex(key))
+key = bin2hex(key)
+f = open("keygen_output.txt", "w")
+f.write(key)
+f.close()

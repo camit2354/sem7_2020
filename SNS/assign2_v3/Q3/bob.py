@@ -1,10 +1,14 @@
 import socket
 import random
+import ast
+import sys
+
 
 # public key
-pk = {'v': 511594531302,
-      'e': 5,
-      'n': 6060711605323}
+f = open("keygen_output.txt", "r")
+pk = str(f.readline())
+pk = ast.literal_eval(pk)
+f.close()
 
 
 def select_random_c(e):

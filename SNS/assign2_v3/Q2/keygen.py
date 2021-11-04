@@ -16,5 +16,11 @@ sk = {
     'd': d
 }
 
+f = open("keygen_output.txt", "w")
+f.write(str(pk))
+f.write('\n')
+f.write(str(sk))
+f.close()
+
 print("public key : "+str(pk))
 print("secret key : "+str(sk))

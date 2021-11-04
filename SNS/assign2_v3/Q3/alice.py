@@ -1,10 +1,20 @@
 import socket
 import random
+import ast
+import sys
+
+f = open("keygen_output.txt", "r")
+pk = str(f.readline())
+sk = str(f.readline())
+pk = ast.literal_eval(pk)
+sk = ast.literal_eval(sk)
+f.close()
+
+
 # secret key
-sk = {'s': 79}
+
 
 # public key
-pk = {'v': 511594531302, 'e': 5, 'n': 6060711605323}
 
 
 def select_random_r():

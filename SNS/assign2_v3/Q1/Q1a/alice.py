@@ -1,11 +1,14 @@
-
+import socket
 import random
 import sys
 
 rollno = 63
-key1 = 7845
-key2 = 1354
 
+
+f = open("keygen_output.txt", "r")
+key1 = int(f.readline())
+key2 = int(f.readline())
+f.close()
 
 # Hexadecimal to binary conversion
 
@@ -114,11 +117,27 @@ def ptHalves(pt):
     return l, r
 
 
-pt = sys.argv[1]
+# next create a socket object
+s = socket.socket()
+print("#     alice, online!")
+
+bob_port_no = 12345
+s.connect(('127.0.0.1', bob_port_no))
+
+msg = s.recv(2048).decode()
+print("bob : "+msg)
+
+pt = input("Enter msg for encryption in string format  \n -> ")
 
 pt = stringToBinary(pt)
-print("\n* Plain text in hex format : " + bin2hex(pt))
+print("\n* Plain text for encryption in hex format : \n" + bin2hex(pt))
+
+print("*****  Encryption  ********")
 l, r = ptHalves(pt)
 l, r = encode(l, r, key1, key2)
 ct = l+r
-print("\n* cipher test in hex format : " + bin2hex(ct))
+s.send(ct.encode())
+print("\n* cipher test sent to bob : \n" + bin2hex(ct))
+
+
+s.close()

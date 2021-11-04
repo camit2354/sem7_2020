@@ -1,5 +1,8 @@
 import sys
 import random
+import ast
+import socket
+
 hashSize = 64  # 64 bit output of hash function
 
 # calculating xor of two strings of binary number a and b
@@ -63,7 +66,7 @@ def dec2bin(num):
 
 def padding(x, sz):
     for i in range(len(x), sz):
-        x += '0'
+        x += '1'
     return x
 
 # input : any size output : 64 bit
@@ -74,7 +77,7 @@ def hash(x):
     rollno = padding(dec2bin(rollno), hashSize)
     ret = rollno
 
-    temp = int(len(x) / hashSize)+1
+    temp = int(len(x) / hashSize) + 3
     x = padding(x, hashSize*temp)
 
     start = 0
@@ -86,7 +89,7 @@ def hash(x):
 
 
 def get_random_r():
-    r = random.randint(1, 999)
+    r = random.randint(1, 30)
     print("random r : "+str(r))
     return r
 
@@ -100,28 +103,47 @@ def sign(msg, sk):
     d = sk['d']
     s1 = bin2dec(hash(stringToBinary(str(msg) + str(pow(e1, r) % p))))
     s2 = r + (d*s1) % q
-    return {"s1": s1, "s2": s2}
+    return {"s1": int(s1), "s2": int(s2)}
 
 
-pk = {
-    "e1": 354,
-    "e2": 1206,
-    "p": 2267,
-    "q": 103
+f = open("keygen_output.txt", "r")
+pk = str(f.readline())
+sk = str(f.readline())
+pk = ast.literal_eval(pk)
+sk = ast.literal_eval(sk)
+f.close()
 
-}
+# Enter message
+f = open("input.txt", "r")
+msg = str(f.readline())
+msg_str = msg
+f.close()
 
-sk = {
-    'd': 30
-}
+print("************   Signature !  ****************")
+# next create a socket object
+s = socket.socket()
+print("#     alice, online!")
 
-msg = sys.argv[1]
-print("Doc for sign : "+msg)
-print(len(msg))
+bob_port_no = 12345
+s.connect(('127.0.0.1', bob_port_no))
+
+temp_msg = s.recv(2048).decode()
+print("bob : "+temp_msg)
+
+
+print("\nDoc for sign : \n"+msg)
 msg = stringToBinary(msg)
 
 msg = bin2dec(msg)
-print("msg : "+str(msg))
 
 sign_ = sign(msg, sk)
-print(sign_)
+print("\nsignature : \n"+str(sign_))
+
+pkt = {
+    'msg': msg_str,
+    'sign_': sign_
+}
+
+s.send(str(pkt).encode())
+print("\n msg , sign sent for verification !\n")
+s.close()

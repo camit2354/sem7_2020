@@ -1,8 +1,13 @@
 import random
 import sys
+import socket
 
 
-key = "2DB3AB3F41936CBC"
+f = open("keygen_output.txt", "r")
+key = f.readline()
+print("key : "+key)
+f.close()
+
 # Hexadecimal to binary conversion
 
 
@@ -368,12 +373,31 @@ key = hex2bin(key)
 iv = "lovekush"
 iv = stringToBinary(iv)
 
-ct = sys.argv[1]
+
+# next create a socket object
+s = socket.socket()
+
+my_port_no = 12345
+
+s.bind(('', my_port_no))
+
+# put the socket into listening mode
+s.listen(1)
+print("#     bob , online!")
+
+# Establish connection with client.
+conn, addr = s.accept()
+print('Got key generation request from : ', addr)
+
+conn.send("connection created !".encode())
+ct = conn.recv(2048).decode()
+print("\ncipher text got :\n"+ct)
+conn.close()
+
 ct = hex2bin(ct)
+
 # Decryption
-print("Decryption !")
-print("iv : "+bin2hex(iv))
+print("\nDecryption !")
 pt = encrypt1(ct, key, 8, iv)
-print("pt : "+bin2hex(pt))
-print("pt : "+binaryToString(pt))
+print("\nplain text after decryption  : \n"+binaryToString(pt))
 print("***************************")

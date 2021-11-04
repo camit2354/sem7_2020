@@ -10,5 +10,9 @@ def genrateRandomKey(rollno):
 key1 = genrateRandomKey(rollno)
 key2 = genrateRandomKey(rollno)
 
-print("key1 : "+str(key1))
-print("key2 : "+str(key2))
+f = open("keygen_output.txt", "w")
+f.write(str(key1))
+f.write('\n')
+f.write(str(key2))
+
+f.close()

@@ -1,4 +1,8 @@
 import sys
+import ast
+import socket
+
+
 hashSize = 64  # 64 bit output of hash function
 
 # calculating xor of two strings of binary number a and b
@@ -62,7 +66,7 @@ def dec2bin(num):
 
 def padding(x, sz):
     for i in range(len(x), sz):
-        x += '0'
+        x += '1'
     return x
 
 # input : any size output : 64 bit
@@ -73,7 +77,7 @@ def hash(x):
     rollno = padding(dec2bin(rollno), hashSize)
     ret = rollno
 
-    temp = int(len(x) / hashSize)+1
+    temp = int(len(x) / hashSize)+3
     x = padding(x, hashSize*temp)
 
     start = 0
@@ -110,35 +114,50 @@ def verify(pk, msg, sign):
     s1 = sign["s1"]
     s2 = sign["s2"]
 
-    temp = pow(e1, s2) * pow(mul_inverse(e2, p), s2) % p
+    temp = ((pow(e1, s2) % p) * (pow(mul_inverse(e2, p), s2) % p)) % p
     v = bin2dec(hash(stringToBinary(str(msg) + str(temp))))
-    print("v :"+str(v)+" s1 : " + str(s1))
+    print("\nv :"+str(v)+"\n s1 : " + str(s1))
     return v == s1
 
 
-pk = {
-    "e1": 354,
-    "e2": 1206,
-    "p": 2267,
-    "q": 103
+f = open("keygen_output.txt", "r")
+pk = str(f.readline())
+pk = ast.literal_eval(pk)
+f.close()
 
-}
+print("************   Verification!  ****************")
+# next create a socket object
+s = socket.socket()
 
-msg = sys.argv[1]
-s1 = int(sys.argv[2])
-s2 = int(sys.argv[3])
+my_port_no = 12345
 
-print("doc for verify : "+msg)
+s.bind(('', my_port_no))
 
-sign_ = {
-    "s1": s1,
-    "s2": s2
-}
+# put the socket into listening mode
+s.listen(1)
+print("#     bob , online!")
 
-print("signature on given doc  : "+str(sign_))
+# Establish connection with client.
+conn, addr = s.accept()
+print('\nGot key generation request from : \n', addr)
+
+conn.send("connection created !".encode())
+pkt = conn.recv(2048).decode()
+pkt = str(pkt)
+
+pkt = ast.literal_eval(pkt)
+conn.close()
+
+print("\n#verify req :  ")
+msg = pkt['msg']
+print("\ndoc for verify : \n"+msg)
+
+sign_ = pkt['sign_']
+print("\nsignature on given doc  : \n"+str(sign_))
 
 msg = stringToBinary(msg)
 msg = bin2dec(msg)
-print("msg : "+str(msg))
 result = verify(pk, msg, sign_)
-print("verification result : "+str(result))
+print("\nverification result : \n"+str(result))
+
+s.close()
