@@ -16,7 +16,7 @@ sk = {
     'd': d
 }
 
-f = open("keygen_output.txt", "w")
+f = open("BT18CSE063_AC_C_Kg_output.txt", "w")
 f.write(str(pk))
 f.write('\n')
 f.write(str(sk))

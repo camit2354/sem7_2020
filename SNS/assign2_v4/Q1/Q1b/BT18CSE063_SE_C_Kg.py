@@ -40,6 +40,7 @@ def gen_random_key_64():
 
 key = gen_random_key_64()
 key = bin2hex(key)
-f = open("keygen_output.txt", "w")
+print("\n key generated : "+key)
+f = open("BT18CSE063_SE_C_Kg_output.txt", "w")
 f.write(key)
 f.close()

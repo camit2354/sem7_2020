@@ -10,9 +10,11 @@ def genrateRandomKey(rollno):
 key1 = genrateRandomKey(rollno)
 key2 = genrateRandomKey(rollno)
 
-f = open("keygen_output.txt", "w")
+f = open("BT18CSE063_SE_Z_Kg_output.txt", "w")
+print("\nfiestal cipher key1 :"+str(key1))
 f.write(str(key1))
 f.write('\n')
+print("fiestal cipher key2 :"+str(key2))
 f.write(str(key2))
 
 f.close()

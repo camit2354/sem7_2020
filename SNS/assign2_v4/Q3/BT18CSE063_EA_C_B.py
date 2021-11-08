@@ -5,7 +5,7 @@ import sys
 
 
 # public key
-f = open("keygen_output.txt", "r")
+f = open("BT18CSE063_EA_C_Kg_output.txt", "r")
 pk = str(f.readline())
 pk = ast.literal_eval(pk)
 f.close()

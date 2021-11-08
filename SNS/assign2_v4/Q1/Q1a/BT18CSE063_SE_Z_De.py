@@ -4,7 +4,7 @@ import sys
 
 rollno = 63
 
-f = open("keygen_output.txt", "r")
+f = open("BT18CSE063_SE_Z_Kg_output.txt", "r")
 key1 = int(f.readline())
 key2 = int(f.readline())
 f.close()

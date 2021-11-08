@@ -1,3 +1,7 @@
+import sys
+import ast
+import socket
+
 
 hashSize = 64  # 64 bit output of hash function
 
@@ -62,7 +66,7 @@ def dec2bin(num):
 
 def padding(x, sz):
     for i in range(len(x), sz):
-        x += '0'
+        x += '1'
     return x
 
 # input : any size output : 64 bit
@@ -73,7 +77,7 @@ def hash(x):
     rollno = padding(dec2bin(rollno), hashSize)
     ret = rollno
 
-    temp = int(len(x) / hashSize)+1
+    temp = int(len(x) / hashSize)+3
     x = padding(x, hashSize*temp)
 
     start = 0
@@ -82,31 +86,6 @@ def hash(x):
         ret = xor(ret, x[start:end])
 
     return ret
-
-
-def verify(pk, msg, sign):
-    e1 = pk["e1"]
-    e2 = pk["e2"]
-    p = pk["p"]
-    q = pk["q"]
-    print("pk : "+str(pk))
-    print("sign : "+str(sign))
-    s1 = sign["s1"]
-    s2 = sign["s2"]
-
-    temp = pow(e1, s2) * pow(mul_inverse(e2, p), s2) % p
-    v = bin2dec(hash(stringToBinary(str(msg) + str(temp))))
-    print("v :"+str(v)+" s1 : " + str(s1))
-    return v == s1
-
-
-def sign(msg, d, r, pk):
-    p = pk["p"]
-    e1 = pk["e1"]
-    q = pk['q']
-    s1 = bin2dec(hash(stringToBinary(str(msg) + str(pow(e1, r) % p))))
-    s2 = r + (d*s1) % q
-    return {"s1": s1, "s2": s2}
 
 
 def ext_eucledian(a, b):
@@ -127,31 +106,58 @@ def mul_inverse(a, m):
     return x
 
 
-p = 2267
-q = 103
-e1 = 354
-e2 = 1206
-r = 11
-d = 30
+def verify(pk, msg, sign):
+    e1 = pk["e1"]
+    e2 = pk["e2"]
+    p = pk["p"]
+    q = pk["q"]
+    s1 = sign["s1"]
+    s2 = sign["s2"]
 
-pk = {
-    "e1": 354,
-    "e2": 1206,
-    "p": 2267,
-    "q": 103
-
-}
+    temp = ((pow(e1, s2) % p) * (pow(mul_inverse(e2, p), s2) % p)) % p
+    v = bin2dec(hash(stringToBinary(str(msg) + str(temp))))
+    print("\nv :"+str(v)+"\n s1 : " + str(s1))
+    return v == s1
 
 
-msg = input("Enter message : ")
-print(len(msg))
+f = open("BT18CSE063_AC_C_Kg_output.txt", "r")
+pk = str(f.readline())
+pk = ast.literal_eval(pk)
+f.close()
+
+print("************   Verification!  ****************")
+# next create a socket object
+s = socket.socket()
+
+my_port_no = 12345
+
+s.bind(('', my_port_no))
+
+# put the socket into listening mode
+s.listen(1)
+print("#     bob , online!")
+
+# Establish connection with client.
+conn, addr = s.accept()
+print('\nGot key generation request from : \n', addr)
+
+conn.send("connection created !".encode())
+pkt = conn.recv(2048).decode()
+pkt = str(pkt)
+
+pkt = ast.literal_eval(pkt)
+conn.close()
+
+print("\n#verify req :  ")
+msg = pkt['msg']
+print("\ndoc for verify : \n"+msg)
+
+sign_ = pkt['sign_']
+print("\nsignature on given doc  : \n"+str(sign_))
+
 msg = stringToBinary(msg)
-
 msg = bin2dec(msg)
-print("msg : "+str(msg))
-
-sign_ = sign(msg, d, r, pk)
-print(sign_)
-
 result = verify(pk, msg, sign_)
-print(result)
+print("\nverification result : \n"+str(result))
+
+s.close()

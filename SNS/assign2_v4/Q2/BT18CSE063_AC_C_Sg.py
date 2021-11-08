@@ -106,7 +106,7 @@ def sign(msg, sk):
     return {"s1": int(s1), "s2": int(s2)}
 
 
-f = open("keygen_output.txt", "r")
+f = open("BT18CSE063_AC_C_Kg_output.txt", "r")
 pk = str(f.readline())
 sk = str(f.readline())
 pk = ast.literal_eval(pk)

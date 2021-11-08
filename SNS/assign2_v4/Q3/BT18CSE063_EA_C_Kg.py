@@ -18,12 +18,12 @@ def mul_inverse(a, m):
     return x
 
 
-p1 = 79
-p2 = 67
+p1 = 67
+p2 = 79
 
-n = pow(p1, 10)
+n = pow(p1, 7)
 s = p2
-e = 4
+e = 5
 v = mul_inverse(pow(s, e), n)
 
 pk = {
@@ -36,17 +36,12 @@ sk = {
     "s": s
 }
 
-r = input("Enter random no(r) for witness : ")
-# witness
-x = pow(r, e) % n
-print("Witness :"+str(x))
 
-# challenge
-c = input("Enter challenge c :")
+f = open("BT18CSE063_EA_C_Kg_output.txt", "w")
+f.write(str(pk))
+f.write('\n')
+f.write(str(sk))
+f.close()
 
-# y-generation
-y = (r*pow(s, c)) % n
-
-# check for correctness
-y2 = pow(y, e)*pow(v, c) % n
-print(y2)
+print("public key : "+str(pk))
+print("secret key : "+str(sk))

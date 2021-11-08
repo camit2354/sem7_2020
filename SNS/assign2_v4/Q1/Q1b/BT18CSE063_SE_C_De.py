@@ -1,7 +1,12 @@
-import socket
-import ast
 import random
+import sys
+import socket
 
+
+f = open("BT18CSE063_SE_C_Kg_output.txt", "r")
+key = f.readline()
+print("key : "+key)
+f.close()
 
 # Hexadecimal to binary conversion
 
@@ -261,7 +266,7 @@ def encrypt_util(pt, rkb):
 # pt : binary , key : binary : 64 bits
 
 
-def encrypt_64(pt, key):
+def encrypt(pt, key):
     # --parity bit drop table
     keyp = [57, 49, 41, 33, 25, 17, 9,
             1, 58, 50, 42, 34, 26, 18,
@@ -318,11 +323,11 @@ def ShiftLeft_r(s, r):
     return ret
 
 
-def encrypt(pt, key, r, iv):
+def encrypt1(pt, key, r, iv):
     ct = ""
     s = iv
 
-    r = r * 8
+    r *= 8
     ptl = []
     start = 0
     end = r
@@ -333,7 +338,7 @@ def encrypt(pt, key, r, iv):
 
     ctl = []
     for i in range(len(ptl)):
-        t = encrypt_64(s, key)
+        t = encrypt(s, key)
         ct = xor(t[0:r], ptl[i])
         s = ShiftLeft_r(s, r) + t[0:r]
         ctl.append(ct)
@@ -345,17 +350,6 @@ def encrypt(pt, key, r, iv):
     return ct
 
 
-def convert_pt(pt):
-    r = 8
-    # padding
-    p = len(pt) % r
-    if p != 0:
-        for i in range(r - p):
-            pt += " "
-    pt = stringToBinary(pt)
-    return pt
-
-
 def gen_random_iv():
     iv = ""
     for i in range(64):
@@ -364,125 +358,23 @@ def gen_random_iv():
     return iv
 
 
-def select_r():
-    nonce = random.randint(1, 1111)
-    return nonce
+def convert_pt(pt):
+    r = 8
+    # padding
+    if len(pt) % r != 0:
+        for i in range(r - (len(pt) % r)):
+            pt += " "
+    pt = stringToBinary(pt)
+    return pt
 
 
-key = "bob12345"
-key = stringToBinary(key)
+key = hex2bin(key)
 
-iv = stringToBinary("amitsinh")
-myID = "bob"
-
-
-def print_msg_req(msg):
-    print("msg request : ")
-    print("     "+msg["peer1"])
-    print("     "+msg["peer2"])
-    print("     "+str(msg["r"]))
-    return
+iv = "lovekush"
+iv = stringToBinary(iv)
 
 
-def get_req_fields(conn):
-    msg = conn.recv(1024).decode()
-    msg = ast.literal_eval(msg)
-    return msg
-
-
-def generate_req_acceptance(req, rB):
-    msg = {"peer1": req["peer1"],
-           "peer2": req["peer2"],  "r": req["r"], "rB": rB}
-    msg = str(msg)
-    return msg
-
-
-def create_key_gen_req_to_kdc(req, ct):
-    msg2 = {
-        "peer1": req['peer1'],
-        "peer2": req['peer2'],
-        "ct1": req["ct"],
-        "ct2": ct
-    }
-    return str(msg2)
-
-
-def is_kdc_res_valid(kds_res, rB):
-    return kds_res['rB'] == rB
-
-
-def send_connection_failure(conn):
-    conn.send(''.encode())
-    conn.close()
-    return
-
-
-def accept_chat_request(conn):
-
-    req = get_req_fields(conn)
-
-    print_msg_req(req)
-
-    rB = select_r()
-
-    msgAcp = generate_req_acceptance(req, rB)
-
-    pt = convert_pt(msgAcp)
-
-    ct = encrypt(pt, key, 8, iv)
-
-    kdc_req = create_key_gen_req_to_kdc(req, ct)
-
-    kdc_res = get_kdc_response(kdc_req)
-    kdc_res = ast.literal_eval(kdc_res)
-
-    ct_kdc_res_for_me = kdc_res['ct2']
-    kdc_res_for_me = ast.literal_eval(
-        binaryToString(encrypt(ct_kdc_res_for_me, key, 8, iv)))
-
-    res_validity_status = is_kdc_res_valid(kdc_res_for_me, rB)
-
-    if res_validity_status != True:
-        send_connection_failure(conn)
-        return False
-
-    print("\n KDC : \n"+str(kdc_res_for_me))
-
-    print("*******************")
-    print("secret key : "+bin2hex(kdc_res_for_me['sk']))
-    print("*********************")
-
-    send_response(conn, kdc_res['ct1'])
-    # Close the connection with the client
-    conn.close()
-    return
-
-
-def get_kdc_response(kdc_req):
-
-    s = socket.socket()
-    kdc_port_no = 12346
-    s.connect(('127.0.0.1', kdc_port_no))
-
-    kdc_res = s.recv(1024).decode()
-
-    s.send(str(kdc_req).encode())
-
-    kdc_res = s.recv(2048).decode()
-    s.close()
-    return kdc_res
-
-
-def send_accept_req_to_alice(conn, msgFromKdc):
-    conn.send(msgFromKdc["ct1"].encode())
-    return
-
-
-def send_response(conn, ct):
-    conn.send(ct.encode())
-    return
-
-
+# next create a socket object
 s = socket.socket()
 
 my_port_no = 12345
@@ -490,16 +382,22 @@ my_port_no = 12345
 s.bind(('', my_port_no))
 
 # put the socket into listening mode
-s.listen(2)
-print("online!")
+s.listen(1)
+print("#     bob , online!")
 
 # Establish connection with client.
 conn, addr = s.accept()
-print('Got connection req from : ', addr)
-conn.send("bob : connection created send req ".encode())
+print('Got key generation request from : ', addr)
 
-accept_chat_request(conn)
-# print("msg from kdc : "+msgFromKdc)
+conn.send("connection created !".encode())
+ct = conn.recv(2048).decode()
+print("\ncipher text got :\n"+ct)
+conn.close()
 
+ct = hex2bin(ct)
 
-s.close()
+# Decryption
+print("\nDecryption !")
+pt = encrypt1(ct, key, 8, iv)
+print("\nplain text after decryption  : \n"+binaryToString(pt))
+print("***************************")

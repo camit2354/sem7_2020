@@ -5,7 +5,7 @@ import sys
 rollno = 63
 
 
-f = open("keygen_output.txt", "r")
+f = open("BT18CSE063_SE_Z_Kg_output.txt", "r")
 key1 = int(f.readline())
 key2 = int(f.readline())
 f.close()
@@ -69,7 +69,7 @@ def bin2hex(s):
 
 def xor(a, b):
     result = ""
-    for i in range(len(a)):
+    for i in range(int(len(a))):
         result += str(int(a[i]) ^ int(b[i]))
     return result
 
@@ -127,7 +127,8 @@ s.connect(('127.0.0.1', bob_port_no))
 msg = s.recv(2048).decode()
 print("bob : "+msg)
 
-pt = input("Enter msg for encryption in string format  \n -> ")
+
+pt = sys.argv[1]
 
 pt = stringToBinary(pt)
 print("\n* Plain text for encryption in hex format : \n" + bin2hex(pt))
