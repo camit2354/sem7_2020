@@ -357,8 +357,9 @@ def send_sk(conn):
     msg = conn.recv(1024).decode()
     msg = ast.literal_eval(msg)
 
-    print(msg['peer1'])
-    print(msg['peer2'])
+    print("\nconnection request : ")
+    print("peer1 : "+msg['peer1'])
+    print("peer2 : "+msg['peer2'])
     # print(msg['ct1'])
     # print(msg['ct2'])
 
@@ -371,9 +372,15 @@ def send_sk(conn):
     ac1 = ast.literal_eval(ac1)
     ac2 = ast.literal_eval(ac2)
 
+    print("r from alice : "+str(ac1['r']))
+    print("rA from alice : "+str(ac1['rA']))
+    print("r from bob : "+str(ac2['r']))
+    print("rB from bob : "+str(ac2['rB']))
+
     sk = generate_sk_for_chat()
-    print("***********************************")
+    print("\n***********************************")
     print("secret key generated : "+bin2hex(sk))
+
     msg1 = {'rA': ac1['rA'], 'sk': sk}
     msg2 = {'rB': ac2['rB'], 'sk': sk}
 
@@ -412,12 +419,7 @@ keys = {
     "alice": stringToBinary("alice777"),
     "bob": stringToBinary("bob12345")
 }
-
-iv = gen_random_iv()
-print("iv : "+bin2hex(iv))
-
 iv = stringToBinary("amitsinh")
-print("iv : "+bin2hex(iv))
 
 # next create a socket object
 s = socket.socket()
@@ -428,14 +430,15 @@ s.bind(('', my_port_no))
 
 # put the socket into listening mode
 s.listen(1)
-print("online!")
+print("\n KDC , online!")
 
 # Establish connection with client.
 conn, addr = s.accept()
-print('Got key generation request from : ', addr)
+print('\n Got key generation request from : '+str(addr)+'\n')
 
-conn.send("kdc : send chat acceptance ".encode())
+# conn.send("kdc : send chat acceptance ".encode())
 send_sk(conn)
+print("\n secret key sent ... ")
 # Close the connection with the client
 conn.close()
 s.close()

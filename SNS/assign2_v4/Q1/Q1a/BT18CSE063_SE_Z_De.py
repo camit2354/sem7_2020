@@ -77,10 +77,10 @@ def xor(a, b):
 
 def f(pt, key):
     temp = ""
-    for i in range(int(len(pt)/8)):
-        n = (key * rollno*i + rollno + key) % 128
-        temp += chr(n)
-    temp = stringToBinary(temp)
+    for i in range(int(len(pt))):
+        n = (key * rollno*i + rollno + key + 1) % 2
+        temp += str(n)
+
     result = xor(pt, temp)
     return result
 

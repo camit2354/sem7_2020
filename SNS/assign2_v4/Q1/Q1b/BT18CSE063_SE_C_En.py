@@ -382,7 +382,13 @@ s.connect(('127.0.0.1', bob_port_no))
 msg = s.recv(2048).decode()
 print("bob : "+msg)
 
-pt = sys.argv[1]
+# Enter message
+fp = open("BT18CSE063_SE_C_input.txt", "r")
+msg = str(fp.readline())
+msg_str = msg
+fp.close()
+pt = msg
+
 
 pt = convert_pt(pt)
 

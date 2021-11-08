@@ -114,7 +114,7 @@ sk = ast.literal_eval(sk)
 f.close()
 
 # Enter message
-f = open("input.txt", "r")
+f = open("BT18CSE063_AC_C_input.txt", "r")
 msg = str(f.readline())
 msg_str = msg
 f.close()
@@ -123,6 +123,8 @@ print("************   Signature !  ****************")
 # next create a socket object
 s = socket.socket()
 print("#     alice, online!")
+
+print("\nsecret key : "+str(sk))
 
 bob_port_no = 12345
 s.connect(('127.0.0.1', bob_port_no))

@@ -5,10 +5,10 @@ import sys
 rollno = 63
 
 
-f = open("BT18CSE063_SE_Z_Kg_output.txt", "r")
-key1 = int(f.readline())
-key2 = int(f.readline())
-f.close()
+fp = open("BT18CSE063_SE_Z_Kg_output.txt", "r")
+key1 = int(fp.readline())
+key2 = int(fp.readline())
+fp.close()
 
 # Hexadecimal to binary conversion
 
@@ -68,6 +68,8 @@ def bin2hex(s):
 
 
 def xor(a, b):
+    print(len(a))
+    print(len(b))
     result = ""
     for i in range(int(len(a))):
         result += str(int(a[i]) ^ int(b[i]))
@@ -76,10 +78,10 @@ def xor(a, b):
 
 def f(pt, key):
     temp = ""
-    for i in range(int(len(pt)/8)):
-        n = (key * rollno*i + rollno + key) % 128
-        temp += chr(n)
-    temp = stringToBinary(temp)
+    for i in range(int(len(pt))):
+        n = (key * rollno*i + rollno + key + 1) % 2
+        temp += str(n)
+
     result = xor(pt, temp)
     return result
 
@@ -127,9 +129,13 @@ s.connect(('127.0.0.1', bob_port_no))
 msg = s.recv(2048).decode()
 print("bob : "+msg)
 
+# Enter message
+fp = open("BT18CSE063_SE_Z_input.txt", "r")
+msg = str(fp.readline())
+msg_str = msg
+fp.close()
 
-pt = sys.argv[1]
-
+pt = msg
 pt = stringToBinary(pt)
 print("\n* Plain text for encryption in hex format : \n" + bin2hex(pt))
 

@@ -10,6 +10,8 @@ pk = str(f.readline())
 pk = ast.literal_eval(pk)
 f.close()
 
+print("\n public key : "+str(pk))
+
 
 def select_random_c(e):
     c = random.randint(1, e)

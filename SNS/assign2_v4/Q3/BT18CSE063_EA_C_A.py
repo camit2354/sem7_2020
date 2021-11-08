@@ -3,6 +3,7 @@ import random
 import ast
 import sys
 
+
 f = open("BT18CSE063_EA_C_Kg_output.txt", "r")
 pk = str(f.readline())
 sk = str(f.readline())
@@ -12,7 +13,7 @@ f.close()
 
 
 # secret key
-
+print("\n secret key : "+str(sk))
 
 # public key
 

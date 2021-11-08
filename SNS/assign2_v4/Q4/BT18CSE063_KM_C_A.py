@@ -372,6 +372,11 @@ def select_r():
 def send_chat_request(s):
     r = select_r()
     rA = select_r()
+
+    print("\nmsg request : ")
+    print("r selected :"+str(r))
+    print("rA selected : "+str(rA))
+
     msg1 = {
         "peer1": myID,
         "peer2": "bob",
@@ -410,13 +415,14 @@ def get_sk(s):
 
 # next create a socket object
 s = socket.socket()
-print("online!")
+print("\n Alice , online!")
 
 bob_port_no = 12345
 s.connect(('127.0.0.1', bob_port_no))
 
-msg = s.recv(1024).decode()
-print("bob : "+msg)
+print("\nconnection request sent to Bob")
+# msg = s.recv(1024).decode()
+# print("bob : "+msg)
 
 
 # print("alice : sending the req ")
@@ -426,5 +432,5 @@ s.close()
 
 
 print("\n*******************")
-print("secret key : "+bin2hex(sk))
+print("secret key received for communication : "+bin2hex(sk))
 print("*******************\n")

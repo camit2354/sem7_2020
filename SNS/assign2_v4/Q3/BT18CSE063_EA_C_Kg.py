@@ -1,3 +1,16 @@
+import random
+
+
+def isPrime(k):
+    if k == 2 or k == 3:
+        return True
+    if k % 2 == 0 or k < 2:
+        return False
+    for i in range(3, int(k**0.5)+1, 2):
+        if k % i == 0:
+            return False
+
+    return True
 
 
 def ext_eucledian(a, b):
@@ -18,22 +31,27 @@ def mul_inverse(a, m):
     return x
 
 
-p1 = 67
-p2 = 79
+primes = []
+for i in range(2, 100000):
+    if isPrime(i):
+        primes.append(i)
 
-n = pow(p1, 7)
+p1 = primes[random.randint(1, len(primes)-1)]
+p2 = primes[random.randint(1, len(primes)-1)]
+
+n = p1
 s = p2
-e = 5
+e = random.randint(5, 10)
 v = mul_inverse(pow(s, e), n)
 
 pk = {
-    "n": n,
-    "v": v,
-    "e": e
+    "n": int(n),
+    "v": int(v),
+    "e": int(e)
 }
 
 sk = {
-    "s": s
+    "s": int(s)
 }
 
 

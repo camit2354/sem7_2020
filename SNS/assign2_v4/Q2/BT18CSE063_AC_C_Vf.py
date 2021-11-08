@@ -137,6 +137,7 @@ s.bind(('', my_port_no))
 s.listen(1)
 print("#     bob , online!")
 
+print("\npublic key : "+str(pk))
 # Establish connection with client.
 conn, addr = s.accept()
 print('\nGot key generation request from : \n', addr)

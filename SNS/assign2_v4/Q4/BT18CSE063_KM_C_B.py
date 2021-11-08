@@ -378,9 +378,9 @@ myID = "bob"
 
 def print_msg_req(msg):
     print("msg request : ")
-    print("     "+msg["peer1"])
-    print("     "+msg["peer2"])
-    print("     "+str(msg["r"]))
+    print("peer1 : "+msg["peer1"])
+    print("peer2 : "+msg["peer2"])
+    print("r : "+str(msg["r"]))
     return
 
 
@@ -424,7 +424,7 @@ def accept_chat_request(conn):
     print_msg_req(req)
 
     rB = select_r()
-
+    print("rB selected : "+str(rB))
     msgAcp = generate_req_acceptance(req, rB)
 
     pt = convert_pt(msgAcp)
@@ -446,10 +446,11 @@ def accept_chat_request(conn):
         send_connection_failure(conn)
         return False
 
-    print("\n KDC : \n"+str(kdc_res_for_me))
+    # print("\n KDC : \n"+str(kdc_res_for_me))
 
-    print("*******************")
-    print("secret key : "+bin2hex(kdc_res_for_me['sk']))
+    print("\n*******************")
+    print("secret key received for communication : " +
+          bin2hex(kdc_res_for_me['sk']))
     print("*********************")
 
     send_response(conn, kdc_res['ct1'])
@@ -464,7 +465,7 @@ def get_kdc_response(kdc_req):
     kdc_port_no = 12346
     s.connect(('127.0.0.1', kdc_port_no))
 
-    kdc_res = s.recv(1024).decode()
+    # kdc_res = s.recv(1024).decode()
 
     s.send(str(kdc_req).encode())
 
@@ -491,12 +492,12 @@ s.bind(('', my_port_no))
 
 # put the socket into listening mode
 s.listen(2)
-print("online!")
+print("\n Bob , online!")
 
 # Establish connection with client.
 conn, addr = s.accept()
-print('Got connection req from : ', addr)
-conn.send("bob : connection created send req ".encode())
+print('\nGot connection req from : '+str(addr)+'\n')
+# conn.send("connection created send req ".encode())
 
 accept_chat_request(conn)
 # print("msg from kdc : "+msgFromKdc)
